@@ -1,6 +1,10 @@
 import React from "react";
 
-export default function Card() {
+export default function Card(props) {
+
+let options = props.options;
+let priceOptions = Object.keys(options);
+
   return (
     <div>
       <div>
@@ -8,11 +12,11 @@ export default function Card() {
           className="card mt-3"
           style={{ width: "18rem", maxHeight: "360px" }}
         >
-          <img src="https://media.istockphoto.com/id/1309352410/photo/cheeseburger-with-tomato-and-lettuce-on-wooden-board.jpg?s=2048x2048&w=is&k=20&c=wydysVEp52o1ULrj9XWI_f8M2lZ06qm8xlBl6GmjTSQ=" className="card-img-top" alt="..." />
+          <img src={props.img} className="card-img-top" alt="..." />
           <div className="card-body">
-            <h5 className="card-title">Card title</h5>
+            <h5 className="card-title">{props.name}</h5>
             <p className="card-text">
-              this is some important text that needs to be in the card body
+              {props.description}
             </p>
             <div className="container -100">
               <select className="m-2 h-100 bg-success ">
@@ -25,11 +29,14 @@ export default function Card() {
                 })}
               </select>
               <select className="m-2 h-100  bg-success rounded">
-                <option value="half">Half </option>
-                <option value="full">Full</option>
+              {priceOptions.map((data) => {
+                return <option key={data} value={options[data]}>
+                  {data} - Tk{options[data]}
+                </option>;
+              })}
               </select>
 
-              <div className="d-inline h-100 fs-5">Total Price</div>
+              <div className="d-inline h-100 fs-5">Total Price :</div>
             </div>
           </div>
         </div>
