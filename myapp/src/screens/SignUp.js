@@ -1,14 +1,10 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function SignUp() {
-  const [credentials, setcredentials] = useState({
-    name: "",
-    email: "",
-    password: "",
-    address: "",
-    phoneNumber: "",
-  });
+  const [credentials, setCredentials] = useState({ name: "", email: "", password: "", address: "", phoneNumber: "" });
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const validatePassword = (password) => {
     let strength = 0;
@@ -19,183 +15,73 @@ export default function SignUp() {
     if (/[^a-zA-Z0-9]/.test(password)) strength++;
 
     if (strength <= 2) return { label: "Weak", color: "red", width: "33%" };
-    if (strength === 3 || strength === 4)
-      return { label: "Medium", color: "orange", width: "66%" };
+    if (strength === 3 || strength === 4) return { label: "Medium", color: "orange", width: "66%" };
     return { label: "Strong", color: "green", width: "100%" };
   };
 
-  const validatePhoneNumber = (phoneNumber) => {
-    const phoneRegex = /^\d{11,14}$/; // Adjust regex as per your requirement
-    return phoneRegex.test(phoneNumber);
-  };
+  const validatePhoneNumber = (number) => /^\d{11,14}$/.test(number);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // ✅ Check password before sending request
-    if (!validatePassword(credentials.password)) {
-      alert("Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.");
-      return;
-    }
+    const passwordCheck = validatePassword(credentials.password);
+    const phoneValid = validatePhoneNumber(credentials.phoneNumber);
 
-    // ✅ Check phone number before sending request
-    if (!validatePhoneNumber(credentials.phoneNumber)) {
-      alert("Phone number must be in Numbers and between 11 and 14 digits.");
-      return;
-    }
+    if (passwordCheck.label === "Weak") return alert("Password too weak.");
+    if (!phoneValid) return alert("Phone number must be 11–14 digits.");
 
     try {
-      const response = await fetch("http://localhost:5000/api/CreateUser", {
+      const res = await fetch("http://localhost:5000/api/CreateUser", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: credentials.name,
-          email: credentials.email,
-          password: credentials.password,
-          address: credentials.address,
-          phoneNumber: credentials.phoneNumber,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
       });
 
-      const json = await response.json();
-      console.log(json);
-
+      const json = await res.json();
       if (!json.success) {
-        alert("Enter Valid Credentials");
+        setError(json.message || "Registration failed.");
       } else {
-        alert("User Created Successfully");
+        alert("User created successfully!");
+        navigate("/login");
       }
-    } catch (error) {
-      console.error("Error creating user", error);
-      alert("Failed to connect to server.");
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError("Failed to connect to the server.");
     }
   };
 
-  const onChange = (e) => {
-    setcredentials({ ...credentials, [e.target.name]: e.target.value });
-  };
+  const onChange = (e) => setCredentials({ ...credentials, [e.target.name]: e.target.value });
+
+  const passwordStrength = validatePassword(credentials.password);
 
   return (
-    <>
-      <div className="container">
-        <form onSubmit={handleSubmit}>
+    <div className="container mt-5">
+      <form onSubmit={handleSubmit}>
+        <h2>Create Account</h2>
+
+        <input type="text" name="name" placeholder="Name" className="form-control mb-3" value={credentials.name} onChange={onChange} required autoFocus />
+        <input type="email" name="email" placeholder="Email" className="form-control mb-3" value={credentials.email} onChange={onChange} required />
+        
+        <input type="password" name="password" placeholder="Password" className="form-control mb-1" value={credentials.password} onChange={onChange} required />
+        {credentials.password && (
           <div className="mb-3">
-            <label htmlFor="name" className="form-label">
-              Name
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              name="name"
-              value={credentials.name}
-              onChange={onChange}
-            />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="exampleInputEmail1" className="form-label">
-              Email address
-            </label>
-            <input
-              type="email"
-              className="form-control"
-              id="exampleInputEmail1"
-              aria-describedby="emailHelp"
-              name="email"
-              value={credentials.email}
-              onChange={onChange}
-            />
-            <div id="emailHelp" className="form-text">
-              your mail will be kept confidential
+            <div style={{ height: "8px", width: "100%", backgroundColor: "#eee", borderRadius: "4px" }}>
+              <div style={{ height: "100%", width: passwordStrength.width, backgroundColor: passwordStrength.color, borderRadius: "4px" }}></div>
             </div>
+            <small style={{ color: passwordStrength.color }}>{passwordStrength.label} Password</small>
+            <div className="text-danger small">Include uppercase, lowercase, number, and special character.</div>
           </div>
-          <div className="mb-3">
-            <label htmlFor="exampleInputPassword1" className="form-label">
-              Password
-            </label>
-            <input
-              type="password"
-              className="form-control"
-              id="exampleInputPassword1"
-              name="password"
-              value={credentials.password}
-              onChange={onChange}
-            />
-            {credentials.password && (
-              <div className="mt-2">
-                <div
-                  style={{
-                    height: "8px",
-                    width: "100%",
-                    backgroundColor: "#eee",
-                    borderRadius: "4px",
-                  }}
-                >
-                  {/* ✅ Password strength bar */}
-                  <div
-                    style={{
-                      height: "100%",
-                      width: validatePassword(credentials.password).width,
-                      backgroundColor: validatePassword(credentials.password)
-                        .color,
-                      borderRadius: "4px",
-                      transition: "0.3s",
-                    }}
-                  ></div>
-                </div>
-                <small
-                  style={{
-                    color: validatePassword(credentials.password).color,
-                  }}
-                >
-                  {validatePassword(credentials.password).label} Password
-                </small>
-                <div className="text-danger small">
-                  {/* ✅ Password validation message */}
-                  Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.
-                  </div>
-              </div>
-            )}
-          </div>
-          <div className="mb-3">
-            <label htmlFor="address" className="form-label">
-              Address
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              name="address"
-              value={credentials.address}
-              onChange={onChange}
-            />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="phoneNumber" className="form-label">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              className="form-control"
-              name="phoneNumber"
-              value={credentials.phoneNumber}
-              onChange={onChange}
-            />
-            {/* ✅ Live phone number validation */}
-            {credentials.phoneNumber &&
-              !validatePhoneNumber(credentials.phoneNumber) && (
-                <div className="text-danger small">
-                  Phone number must be in numbers and between 11 and 14 digits.
-                </div>
-              )}
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Submit
-          </button>
-          <Link to="/login" className="m-3 btn btn-danger">
-            Already a User
-          </Link>
-        </form>
-      </div>
-    </>
+        )}
+
+        <input type="text" name="address" placeholder="Address" className="form-control mb-3" value={credentials.address} onChange={onChange} required />
+        <input type="tel" name="phoneNumber" placeholder="Phone Number" className="form-control mb-1" value={credentials.phoneNumber} onChange={onChange} required />
+        {credentials.phoneNumber && !validatePhoneNumber(credentials.phoneNumber) && (
+          <div className="text-danger small mb-3">Phone number must be 11–14 digits.</div>
+        )}
+
+        {error && <div className="text-danger mb-3">{error}</div>}
+        <button type="submit" className="btn btn-primary">Submit</button>
+        <Link to="/login" className="btn btn-danger ms-3">Already a user?</Link>
+      </form>
+    </div>
   );
 }

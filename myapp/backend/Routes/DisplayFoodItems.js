@@ -1,14 +1,17 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-router.post('/DisplayFoodItems', async (req, res) => {
+router.get("/fooddata", async (req, res) => {
   try {
- // Optionally log global data for debugging
-    console.log("Global food items:", global.food_items);
-    res.send(global.food_items);
+    if (!global.food_items || !global.food_Category) {
+      return res.status(500).json({ error: "Food data not loaded" });
+    }
+    res.status(200).json({
+      items: global.food_items,
+      categories: global.food_Category,
+    });
   } catch (error) {
-    console.error("Error fetching food items:", error);
-    res.send({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

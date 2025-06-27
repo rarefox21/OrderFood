@@ -1,34 +1,30 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 const { Schema } = mongoose;
 
 const UserSchema = new Schema({
-  name: {
-    type: String,
-    required: true,
-  },
+  name: { type: String, required: true },
   email: {
     type: String,
     required: true,
     unique: true,
+    match: [/^\S+@\S+\.\S+$/, "Invalid email address"],
   },
-  password: {
-    type: String,
-    required: true,
-  },
-  address: {
-    type: String,
-    required: true,
-  },
+  password: { type: String, required: true },
+  address: { type: String, required: true },
   phoneNumber: {
     type: String,
     required: true,
+    match: [/^\d{11,14}$/, "Invalid phone number"],
   },
+  date: { type: Date, default: Date.now },
+});
 
-  date: {
-    type: Date,
-    default: Date.now,
-  },
-
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
 module.exports = mongoose.model("User", UserSchema);
